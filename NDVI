@@ -1,0 +1,37 @@
+Define roi as geometry
+---------------------------------------
+var S2_display = {bands: ['B4', 'B3', 'B2'], min: 0, max: 3000};
+var ndvi_palette = 'FFFFFF, CE7E45, DF923D, F1B555, FCD163, 99B718, 74A901, 66A000, 529400, ' + '3E8601, 207401, 056201, 004C00, 023B01, 012E01, 011D01, 011301';
+
+// an automatic way of calculating NDVI for the whole Sentinel-2 collection:
+
+function addnd(input) {
+  var nd = input.normalizedDifference(['B8', 'B4']).rename('ndvi');
+  return input.addBands(nd);
+}
+
+var S2_collection = ee.ImageCollection("COPERNICUS/S2")
+  .filterBounds(geometry)
+  .filterDate('2023-01-01', '2023-12-30')
+  .filterMetadata('CLOUDY_PIXEL_PERCENTAGE', 'less_than', 10)
+  .map(addnd);
+
+print(S2_collection);
+
+var S2_mosaic = S2_collection.median().clip(geometry);
+
+Map.addLayer(S2_mosaic, S2_display, "S2_Image");
+
+var ndvi = S2_collection.select('ndvi').median().clip(geometry);
+
+Map.addLayer(ndvi, {min: -0.1, max: 1, palette: ndvi_palette}, 'NDVI');
+
+Map.centerObject(geometry);
+
+Export.image.toDrive({
+  image:ndvi,
+  description: 'NDVI',
+  scale: 10,
+  region: geometry,
+  maxPixels: 1e13
+});
