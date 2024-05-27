@@ -1,0 +1,36 @@
+Define ROI 
+--------------------------
+// 1. Load a Landsat 8 image collection
+var Landsat_Collection = ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA")
+// 2. Timeseries Analysis of Reservoir or you can alter as per your study eg.glaciers,morphological changes, landuse changes
+.filter(ee.Filter.eq('WRS_PATH', 143))
+.filter(ee.Filter.eq('WRS_ROW', 54))
+// 3. Filter cloudy scenes.
+.filter(ee.Filter.lt('CLOUD_COVER', 20))
+// 4. Get 6 years of imagery.
+.filterDate('2014-01-01','2023-12-31')
+// 5. Need to have 3-band imagnery for the video.
+.select(['B4','B3','B2'])
+// 6. Need to make the data 8-bit.
+.map(function(image){
+  return image.multiply(512).uint8();
+});
+// 8. Export (change dimension or scale for higher quality).
+Export.video.toDrive({
+  collection: Landsat_Collection,
+  description: 'TimelapseVideoToDrive',
+  dimensions: 720,
+  framesPerSecond: 12,//you can change the frames by reducing value to get a more imagery
+  region: ROI
+});
+// 9. Export video to cloud storage.(change dimension or scale for higher quality).
+Export.video.toCloudStorage({
+  collection: Landsat_Collection,
+  description: 'TimelapseVideoToCloud',
+  bucket: 'test',
+  dimensions: 720,
+  framesPerSecond: 12,
+  region: ROI
+});
+
+
