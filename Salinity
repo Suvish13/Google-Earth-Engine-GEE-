@@ -1,0 +1,26 @@
+Define roi
+--------------------------------------------
+var salinity = ee.ImageCollection("HYCOM/sea_temp_salinity")
+.select('salinity_0')
+.filterDate('2010','2011')
+.filter(ee.Filter.calendarRange(1, 1, 'month'))
+.map(function(img){
+  var bands = img.multiply(0.001).add(20);
+  return bands
+  .copyProperties(img,img.propertyNames())
+  });
+
+var stack = salinity.toBands();
+
+Map.addLayer(stack,[],'salinity',false);
+
+Export.image.toDrive({
+  image: stack.clip(roi3),
+  description: 'persian_gulf_salinity',
+  scale: 9000,
+  region: roi,
+  maxPixels: 1e13,
+  crs: stack.getInfo().crs,
+  folder: 'test'
+  
+  })
